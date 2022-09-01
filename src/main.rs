@@ -33,9 +33,11 @@ fn print_braille(args: Args) {
     let width = it.width;
     
     for chunk in &it
-    .flat_map(|lums| return lums_to_braille(lums) ).chunks(width/2) {
+    .flat_map(|lums| return lums_to_braille(lums) )
+    // div 2 due to one braille char consuming 2px in x direction
+    .chunks(width/2) { 
         let row: String = chunk.collect();
-        println!("{:#?}", row);
+        println!("{}", row);
     }
 
 }
