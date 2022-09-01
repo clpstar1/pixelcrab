@@ -2,29 +2,32 @@
 
 pub mod iter;
 pub mod cli;
+pub mod c_const;
 
 use clap::Parser;
 use image::DynamicImage;
 use itertools::Itertools;
 
-use iter::{DynImageIterator, IteratorOpts};
+use iter::{BrailleCellIterator, IteratorOpts};
 use cli::Args;
 
 fn main() {
     let args = Args::parse();
-    
     print_braille(args);
-
     return ();
 }
 
 fn print_braille(args: Args) {
 
-    let image: DynamicImage = image::open(args.path).unwrap();
+    let mut image = image::open(args.path).unwrap();
 
-    let it = DynImageIterator::new(
+    if args.cols > 10 {
+        image = resize_image(args.cols, &image);
+    }
+
+    let it = BrailleCellIterator::new(
         &image, 
-        IteratorOpts { threshold: args.thresh, invert: dbg!(args.invert) }
+        IteratorOpts { threshold: args.thresh, invert: args.invert }
     );
     let width = it.width;
     
@@ -36,9 +39,17 @@ fn print_braille(args: Args) {
 
 }
 
+fn resize_image(cols: u32, img: &DynamicImage) -> DynamicImage {
 
-fn resize_image(cols: u32) {
-    todo!()
+    let aspect_ratio = img.height() as f32 / img.width() as f32;
+    let new_width = cols * 2;
+    let new_height = img.height() as f32 * aspect_ratio;
+
+    return img.resize(
+        new_width, 
+        new_height.floor() as u32, 
+        image::imageops::FilterType::Nearest
+    );
 }
 
 
