@@ -1,11 +1,13 @@
 use image::{DynamicImage, GenericImageView};
 
+use crate::c_const::{CELL_SIZE, CELL_SIZE_X, CELL_SIZE_Y};
+
 pub struct IteratorOpts {
     pub threshold: u32,
     pub invert: bool
 }
 
-pub struct DynImageIterator<'a> {
+pub struct BrailleCellIterator<'a> {
     img: &'a DynamicImage,
     x: usize,
     y: usize,
@@ -14,12 +16,12 @@ pub struct DynImageIterator<'a> {
     pub height: usize,
 }
 
-impl DynImageIterator<'_> {
+impl BrailleCellIterator<'_> {
 
-    pub fn new(img: &DynamicImage, opts: IteratorOpts) -> DynImageIterator {
+    pub fn new(img: &DynamicImage, opts: IteratorOpts) -> BrailleCellIterator {
         let w = img.width().try_into().unwrap();
         let h: usize = img.height().try_into().unwrap();
-        return DynImageIterator { 
+        return BrailleCellIterator { 
             img, 
             x: 0, 
             y: 0,
@@ -31,8 +33,8 @@ impl DynImageIterator<'_> {
     }
 }
 
-impl Iterator for DynImageIterator<'_> {
-    type Item = [u32; 8];
+impl Iterator for BrailleCellIterator<'_> {
+    type Item = [u32; CELL_SIZE];
 
     fn next(&mut self) -> Option<Self::Item> {
 
@@ -40,10 +42,10 @@ impl Iterator for DynImageIterator<'_> {
             return None
         }
         
-        let mut res: [u32; 8] = [0; 8];
+        let mut res: [u32; CELL_SIZE] = [0; CELL_SIZE];
 
-        for x in 0..2usize {
-            for y in 0..4usize {
+        for x in 0..CELL_SIZE_X {
+            for y in 0..CELL_SIZE_Y {
                 let _x: usize = self.x + x;
                 let _y: usize = self.y + y;
 
@@ -67,14 +69,14 @@ impl Iterator for DynImageIterator<'_> {
                     raised ^= 1;
                 }
             
-                res[(x*4) + y] = raised;
+                res[(x*CELL_SIZE_Y) + y] = raised;
             }
         }
 
-        self.x += 2;
+        self.x += CELL_SIZE_X;
 
         if self.x == self.width {
-            self.y += 4;
+            self.y += CELL_SIZE_Y;
             if self.y != self.height {
                 self.x = 0;
             }

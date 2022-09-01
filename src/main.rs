@@ -4,6 +4,7 @@ pub mod iter;
 pub mod cli;
 pub mod c_const;
 
+use c_const::{CELL_SIZE, CELL_SIZE_X, BRAILLE_BASE};
 use clap::Parser;
 use image::DynamicImage;
 use itertools::Itertools;
@@ -42,7 +43,7 @@ fn print_braille(args: Args) {
 fn resize_image(cols: u32, img: &DynamicImage) -> DynamicImage {
 
     let aspect_ratio = img.height() as f32 / img.width() as f32;
-    let new_width = cols * 2;
+    let new_width = cols * CELL_SIZE_X as u32;
     let new_height = img.height() as f32 * aspect_ratio;
 
     return img.resize(
@@ -53,17 +54,16 @@ fn resize_image(cols: u32, img: &DynamicImage) -> DynamicImage {
 }
 
 
-fn lums_to_braille(lums: [u32; 8]) -> Option<char> {
+fn lums_to_braille(lums: [u32; CELL_SIZE]) -> Option<char> {
     let [zero, one, two, three, four, five, six, seven] = lums;
     let arr = [zero, one, two, four, five, six, three, seven];
 
-    let braille_base = 10240;
     let offset = arr_to_bin(arr);
 
-    return char::from_u32(braille_base + offset);
+    return char::from_u32(BRAILLE_BASE + offset);
 }
 
-fn arr_to_bin(lums: [u32; 8]) -> u32 {
+fn arr_to_bin(lums: [u32; CELL_SIZE]) -> u32 {
     let mut res = 0;
     let base: u32 = 2;
 
