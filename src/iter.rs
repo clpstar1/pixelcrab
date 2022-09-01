@@ -5,8 +5,8 @@ pub struct IteratorOpts {
     pub invert: bool
 }
 
-pub struct DynImageIterator {
-    img: DynamicImage,
+pub struct DynImageIterator<'a> {
+    img: &'a DynamicImage,
     x: usize,
     y: usize,
     opts: IteratorOpts,
@@ -14,9 +14,9 @@ pub struct DynImageIterator {
     pub height: usize,
 }
 
-impl DynImageIterator {
+impl DynImageIterator<'_> {
 
-    pub fn new(img: DynamicImage, opts: IteratorOpts) -> DynImageIterator {
+    pub fn new(img: &DynamicImage, opts: IteratorOpts) -> DynImageIterator {
         let w = img.width().try_into().unwrap();
         let h: usize = img.height().try_into().unwrap();
         return DynImageIterator { 
@@ -31,7 +31,7 @@ impl DynImageIterator {
     }
 }
 
-impl Iterator for DynImageIterator {
+impl Iterator for DynImageIterator<'_> {
     type Item = [u32; 8];
 
     fn next(&mut self) -> Option<Self::Item> {

@@ -23,8 +23,8 @@ fn print_braille(args: Args) {
     let image: DynamicImage = image::open(args.path).unwrap();
 
     let it = DynImageIterator::new(
-        image, 
-        IteratorOpts { threshold: args.thresh, invert: args.invert }
+        &image, 
+        IteratorOpts { threshold: args.thresh, invert: dbg!(args.invert) }
     );
     let width = it.width;
     
@@ -34,6 +34,11 @@ fn print_braille(args: Args) {
         println!("{:#?}", row);
     }
 
+}
+
+
+fn resize_image(cols: u32) {
+    todo!()
 }
 
 
