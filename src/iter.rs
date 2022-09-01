@@ -1,33 +1,37 @@
 use image::{DynamicImage, GenericImageView};
 
-const THRESHOLD:u32 = 128;
+pub struct IteratorOpts {
+    pub threshold: u32,
+    pub invert: bool
+}
 
-pub struct DynamicImageWrapper {
+pub struct DynImageIterator {
     img: DynamicImage,
     x: usize,
     y: usize,
+    opts: IteratorOpts,
     pub width: usize,
     pub height: usize,
-    pub threshold: u32
 }
 
-impl DynamicImageWrapper {
+impl DynImageIterator {
 
-    pub fn new(img: DynamicImage, threshold: u32) -> DynamicImageWrapper {
+    pub fn new(img: DynamicImage, opts: IteratorOpts) -> DynImageIterator {
         let w = img.width().try_into().unwrap();
         let h: usize = img.height().try_into().unwrap();
-        return DynamicImageWrapper { 
+        return DynImageIterator { 
             img, 
             x: 0, 
             y: 0,
+            opts,
             width: w,
             height: h,
-            threshold
+        
         };
     }
 }
 
-impl Iterator for DynamicImageWrapper {
+impl Iterator for DynImageIterator {
     type Item = [u32; 8];
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -52,12 +56,17 @@ impl Iterator for DynamicImageWrapper {
                     _y.try_into().unwrap()
                 ).0;
                 let [r, g, b, _] = px;
-                let lum =( 
+                let lum = ( 
                     u32::from(r) +
                     u32::from(g) + 
                     u32::from(b)
                 ) / 3;
-                let raised = if lum > THRESHOLD { 0 } else { 1 };
+                let mut raised = if lum > self.opts.threshold { 0 } else { 1 };
+
+                if self.opts.invert {
+                    raised ^= 1;
+                }
+            
                 res[(x*4) + y] = raised;
             }
         }

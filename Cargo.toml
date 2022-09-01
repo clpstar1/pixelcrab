@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 image = "*"
 itertools = "*"
+clap = { version = "3.0", features = ["derive"] }

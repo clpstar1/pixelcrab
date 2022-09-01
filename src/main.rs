@@ -1,33 +1,31 @@
 
 
 pub mod iter;
+pub mod cli;
 
+use clap::Parser;
 use image::DynamicImage;
-use std::env;
-use iter::DynamicImageWrapper;
 use itertools::Itertools;
 
-const DEFAULT_PATH: &str = "aiko.bmp";
+use iter::{DynImageIterator, IteratorOpts};
+use cli::Args;
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let args = Args::parse();
     
-    match args.get(1) {
-        None => {
-            read_bmp(DEFAULT_PATH);
-        }
-        Some(v) => {
-            read_bmp(&v);
-        }
-    }
+    print_braille(args);
 
     return ();
 }
 
-fn read_bmp(path: &str) {
-    let image: DynamicImage = image::open(path).unwrap();
+fn print_braille(args: Args) {
 
-    let it = DynamicImageWrapper::new(image, 96);
+    let image: DynamicImage = image::open(args.path).unwrap();
+
+    let it = DynImageIterator::new(
+        image, 
+        IteratorOpts { threshold: args.thresh, invert: args.invert }
+    );
     let width = it.width;
     
     for chunk in &it
