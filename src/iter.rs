@@ -1,6 +1,6 @@
 use image::{DynamicImage, GenericImageView};
 
-use crate::c_const::{CELL_SIZE, CELL_SIZE_X, CELL_SIZE_Y};
+use crate::constants::{CELL_SIZE, CELL_SIZE_X, CELL_SIZE_Y};
 
 pub struct IteratorOpts {
     pub threshold: u32,
