@@ -5,12 +5,23 @@ const THRESHOLD:u32 = 128;
 pub struct DynamicImageWrapper {
     img: DynamicImage,
     x: usize,
-    y: usize
+    y: usize,
+    width: usize,
+    height: usize,
+    
 }
 
 impl DynamicImageWrapper {
     pub fn new(img: DynamicImage) -> DynamicImageWrapper {
-        return DynamicImageWrapper { img, x: 0, y: 0 };
+        let w = img.width().try_into().unwrap();
+        let h: usize = img.height().try_into().unwrap();
+        return DynamicImageWrapper { 
+            img, 
+            x: 0, 
+            y: 0,
+            width: w,
+            height: h
+        };
     }
 }
 
@@ -18,10 +29,8 @@ impl Iterator for DynamicImageWrapper {
     type Item = [u32; 8];
 
     fn next(&mut self) -> Option<Self::Item> {
-        let width: usize = self.img.width().try_into().unwrap();
-        let height: usize = self.img.height().try_into().unwrap();
 
-        if self.x == width && self.y == height {
+        if self.x == self.width && self.y == self.height {
             return None
         }
         
@@ -40,15 +49,15 @@ impl Iterator for DynamicImageWrapper {
                     u32::from(b)
                 ) / 3;
                 let raised = if lum > THRESHOLD { 0 } else { 1 };
-                res[(x*4) + y] = dbg!(raised)
+                res[(x*4) + y] = raised;
             }
         }
 
         self.x += 2;
 
-        if self.x == width {
+        if self.x == self.width {
             self.y += 4;
-            if self.y != height {
+            if self.y != self.height {
                 self.x = 0;
             }
         }

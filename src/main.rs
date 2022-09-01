@@ -1,9 +1,10 @@
-pub mod image_iter;
 
-use image::{DynamicImage, GenericImageView};
+
+pub mod iter;
+
+use image::DynamicImage;
 use std::env;
-
-use crate::image_iter::DynamicImageWrapper;
+use iter::DynamicImageWrapper;
 
 const DEFAULT_PATH: &str = "test5.bmp";
 
