@@ -55,7 +55,6 @@ fn resize_image(cols: u32, img: &DynamicImage) -> DynamicImage {
     );
 }
 
-
 fn lums_to_braille(lums: [u32; CELL_SIZE]) -> Option<char> {
     let [zero, one, two, three, four, five, six, seven] = lums;
     let braille_format = [zero, one, two, four, five, six, three, seven];
