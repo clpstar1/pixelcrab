@@ -1,16 +1,18 @@
-use clap::Parser;
+use bpaf::*;
 
-#[derive(Parser, Debug)]
+#[derive(Clone, Debug, Bpaf)]
+#[bpaf(options)]
 pub struct Args {
     /// path to the image
     pub path: String,
     /// invert output whitespace/characters
-    #[clap(short = 'i', long = "invert", takes_value = false)]
+    #[bpaf(short, long)]
     pub invert: bool,
     /// the luminance threshold
-    #[clap(short = 't', long = "threshold", default_value_t = 128)]
+    #[bpaf(short, long("threshold"), fallback(128))]
     pub thresh: u32,
     /// size of the output in columns
-    #[clap(short = 'c', long = "columns", default_value_t = 0)]
+    #[bpaf(short, long("columns"), fallback(0))]
     pub cols: u32,
 }
+

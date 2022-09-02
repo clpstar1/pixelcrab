@@ -1,25 +1,20 @@
-
-
-pub mod iter;
 pub mod cli;
 pub mod constants;
+pub mod iter;
 
-use constants::{CELL_SIZE, CELL_SIZE_X, BRAILLE_BASE};
-use clap::Parser;
+use constants::{BRAILLE_BASE, CELL_SIZE, CELL_SIZE_X};
 use image::DynamicImage;
 use itertools::Itertools;
 
-use iter::{BrailleCellIterator, IteratorOpts};
 use cli::Args;
+use iter::{BrailleCellIterator, IteratorOpts};
 
 fn main() {
-    let args = Args::parse();
+    let args = cli::args().run();
     print_braille(args);
-    return ();
 }
 
 fn print_braille(args: Args) {
-
     let mut image = image::open(args.path).unwrap();
 
     if args.cols > 10 {
@@ -27,31 +22,33 @@ fn print_braille(args: Args) {
     }
 
     let it = BrailleCellIterator::new(
-        &image, 
-        IteratorOpts { threshold: args.thresh, invert: args.invert }
+        &image,
+        IteratorOpts {
+            threshold: args.thresh,
+            invert: args.invert,
+        },
     );
     let width = it.width;
-    
+
     for chunk in &it
-    .flat_map(|lums| return lums_to_braille(lums) )
-    // div 2 due to one braille char consuming 2px in x direction
-    .chunks(width/2) { 
+        .flat_map(|lums| return lums_to_braille(lums))
+        // div 2 due to one braille char consuming 2px in x direction
+        .chunks(width / 2)
+    {
         let row: String = chunk.collect();
         println!("{}", row);
     }
-
 }
 
 fn resize_image(cols: u32, img: &DynamicImage) -> DynamicImage {
-
     let aspect_ratio = img.height() as f32 / img.width() as f32;
     let new_width = cols * CELL_SIZE_X as u32;
     let new_height = img.height() as f32 * aspect_ratio;
 
     return img.resize(
-        new_width, 
-        new_height.floor() as u32, 
-        image::imageops::FilterType::Nearest
+        new_width,
+        new_height.floor() as u32,
+        image::imageops::FilterType::Nearest,
     );
 }
 
