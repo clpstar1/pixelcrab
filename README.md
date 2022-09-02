@@ -12,4 +12,4 @@ a small command line application for creating braille pixel art written in rust.
 or
 - run with `cargo run -- args`
 
-tip: run the executable with --help to see how to execute the program.
+tip: run the executable with --help to see what options the program takes.
