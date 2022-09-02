@@ -31,7 +31,7 @@ fn print_braille(args: Args) {
     let width = it.width;
 
     for chunk in &it
-        .flat_map(|lums| return lums_to_braille(lums))
+        .filter_map(lums_to_braille)
         // div 2 due to one braille char consuming 2px in x direction
         .chunks(width / 2)
     {
@@ -45,11 +45,11 @@ fn resize_image(cols: u32, img: &DynamicImage) -> DynamicImage {
     let new_width = cols * CELL_SIZE_X as u32;
     let new_height = img.height() as f32 * aspect_ratio;
 
-    return img.resize(
+    img.resize(
         new_width,
         new_height.floor() as u32,
         image::imageops::FilterType::Nearest,
-    );
+    )
 }
 
 fn lums_to_braille(lums: [u32; CELL_SIZE]) -> Option<char> {
@@ -58,7 +58,7 @@ fn lums_to_braille(lums: [u32; CELL_SIZE]) -> Option<char> {
 
     let offset = braille_offset(braille_format);
 
-    return char::from_u32(BRAILLE_BASE + offset);
+    char::from_u32(BRAILLE_BASE + offset)
 }
 
 fn braille_offset(lums: [u32; CELL_SIZE]) -> u32 {
@@ -68,5 +68,5 @@ fn braille_offset(lums: [u32; CELL_SIZE]) -> u32 {
     for (i, bit) in lums.iter().enumerate() {
         res += bit * (base.pow(i as u32));
     }
-    return res as u32;
+    res
 }

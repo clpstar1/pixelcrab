@@ -1,4 +1,4 @@
-use bpaf::*;
+use bpaf::Bpaf;
 
 #[derive(Clone, Debug, Bpaf)]
 #[bpaf(options)]
@@ -15,4 +15,3 @@ pub struct Args {
     #[bpaf(short, long("columns"), fallback(0))]
     pub cols: u32,
 }
-

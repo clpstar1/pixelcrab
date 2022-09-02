@@ -6,6 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-image = "*"
-itertools = "*"
 bpaf = { version = "0.5.5", features = ["derive", "autocomplete"] }
+image = "0.24.3"
+itertools = "0.10.3"
+
+[features]
