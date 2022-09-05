@@ -17,7 +17,7 @@ tip: run the executable with --help to see what options the program takes.
 ## example 
 `pixelcrab -c 80 -t 90 /path/to/image`
 
-outputs a image 80 columns wide with a luminance threshold set to 90.
+outputs a text 80 columns wide with a luminance threshold set to 90.
 the threshold value is used to decide between putting a braille dot or leaving it blank. 
 
 ##
