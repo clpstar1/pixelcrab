@@ -1,10 +1,10 @@
+use std::path::PathBuf;
+
 use bpaf::Bpaf;
 
 #[derive(Clone, Debug, Bpaf)]
 #[bpaf(options)]
 pub struct Args {
-    /// path to the image
-    pub path: String,
     /// invert output whitespace/characters
     #[bpaf(short, long)]
     pub invert: bool,
@@ -14,4 +14,7 @@ pub struct Args {
     /// size of the output in columns
     #[bpaf(short, long("columns"), fallback(0))]
     pub cols: u32,
+    /// path to the image
+    #[bpaf(positional_os("IMAGE"))]
+    pub path: PathBuf,
 }
