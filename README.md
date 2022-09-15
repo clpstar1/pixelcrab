@@ -3,7 +3,7 @@ a small command line application for creating braille pixel art written in rust.
 
 ## installation
 - set up rust-lang on your computer
-- cargo install --git https://github.com/clpstar1/pixelcrab
+- `cargo install --git https://github.com/clpstar1/pixelcrab`
 - set up shell completion powered by [bpaf](https://github.com/pacak/bpaf)
 
 ## usage examples
