@@ -2,20 +2,22 @@ pub mod cli;
 pub mod constants;
 pub mod iter;
 
+use std::io::{self, Cursor, Read};
+
 use constants::{BRAILLE_BASE, CELL_SIZE, CELL_SIZE_X};
 use image::DynamicImage;
 use itertools::Itertools;
 
-use cli::Args;
 use iter::{BrailleCellIterator, IteratorOpts};
 
 fn main() {
     let args = cli::args().run();
-    print_braille(args);
-}
+    let path_as_str = args.path.to_str().unwrap();
 
-fn print_braille(args: Args) {
-    let mut image = image::open(args.path).unwrap();
+    let mut image = match path_as_str {
+        "-" => { read_raw_image_from_stdin() }
+        _ => { image::open(args.path).unwrap() }
+    };
 
     if args.cols > 10 {
         image = resize_image(args.cols, &image);
@@ -38,6 +40,24 @@ fn print_braille(args: Args) {
         let row: String = chunk.collect();
         println!("{}", row);
     }
+
+}
+
+fn read_raw_image_from_stdin() -> DynamicImage {
+    let stdin = io::stdin();
+    let handle = stdin.lock();
+
+    let bytes: Vec<u8> = handle.bytes().map(|x| x.unwrap()).collect();
+
+    let cursor = Cursor::new(bytes);
+
+    let img = image::io::Reader::new(cursor)
+        .with_guessed_format()
+        .unwrap()
+        .decode()
+        .unwrap();
+
+    return img;
 }
 
 fn resize_image(cols: u32, img: &DynamicImage) -> DynamicImage {
