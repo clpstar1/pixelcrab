@@ -1,22 +1,25 @@
 pub mod cli;
 pub mod constants;
 pub mod iter;
+pub mod render;
 
 use std::io::{self, Cursor, Read};
 
 use constants::{BRAILLE_BASE, CELL_SIZE, CELL_SIZE_X};
-use image::DynamicImage;
+use image::{DynamicImage, ImageBuffer, Rgba};
 use itertools::Itertools;
 
 use iter::{BrailleCellIterator, IteratorOpts};
+use render::render_image;
+use rusttype::{point, Font, Scale};
 
 fn main() {
     let args = cli::args().run();
-    let path_as_str = args.path.to_str().unwrap();
+    let input_path_as_str = args.path.to_str().unwrap();
 
-    let mut image = match path_as_str {
-        "-" => { read_raw_image_from_stdin() }
-        _ => { image::open(args.path).unwrap() }
+    let mut image = match input_path_as_str {
+        "-" => read_raw_image_from_stdin(),
+        _ => image::open(args.path).unwrap(),
     };
 
     if args.cols > 10 {
@@ -32,15 +35,20 @@ fn main() {
     );
     let width = it.width;
 
-    for chunk in &it
+    let rows: Vec<String> = it
         .filter_map(lums_to_braille)
         // div 2 due to one braille char consuming 2px in x direction
         .chunks(width / 2)
-    {
-        let row: String = chunk.collect();
-        println!("{}", row);
-    }
+        .into_iter()
+        .map(|chunk| chunk.collect())
+        .collect();
 
+    if args.print {
+        for row in rows.iter() {
+            println!("{}", row);
+        }
+    }
+    render_image(rows, args.output);
 }
 
 fn read_raw_image_from_stdin() -> DynamicImage {

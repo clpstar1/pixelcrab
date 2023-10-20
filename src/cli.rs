@@ -17,4 +17,10 @@ pub struct Args {
     /// path to the image
     #[bpaf(positional_os("IMAGE"))]
     pub path: PathBuf,
+    /// print the output
+    #[bpaf(short, long("print"))]
+    pub print: bool,
+    #[bpaf(short, long("output"), fallback("-".into()))]
+    pub output: PathBuf
+
 }
