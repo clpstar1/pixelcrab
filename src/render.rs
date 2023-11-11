@@ -1,7 +1,21 @@
-use std::{path::PathBuf, io::{BufWriter, stdout}};
+use std::{
+    io::{stdout, Cursor},
+    path::PathBuf,
+};
 
-use rusttype::{Font, Scale, point, VMetrics};
-use image::{DynamicImage, ImageBuffer, Rgba, Luma, ImageOutputFormat, codecs::bmp::BmpEncoder, ImageEncoder, EncodableLayout};
+use image::{codecs::bmp::BmpEncoder, io::Reader, DynamicImage, Luma};
+
+use ffmpeg_next::{
+    self,
+    format::{self, Pixel},
+    frame::Video,
+    media::Type,
+    software::scaling::{Context, Flags},
+};
+
+use rusttype::{point, Font, Scale};
+
+use crate::{cli::Args, img2text};
 
 pub fn render_image(text: Vec<String>, output: PathBuf) {
     // Load the font
@@ -20,7 +34,11 @@ pub fn render_image(text: Vec<String>, output: PathBuf) {
 
     // layout the glyphs in a line with 20 pixels padding
     let glyphs: Vec<_> = font
-        .layout(&text.first().unwrap(), scale, point(offset, offset + v_metrics.ascent))
+        .layout(
+            &text.first().unwrap(),
+            scale,
+            point(offset, offset + v_metrics.ascent),
+        )
         .collect();
 
     // work out the layout size
@@ -38,16 +56,20 @@ pub fn render_image(text: Vec<String>, output: PathBuf) {
     };
 
     // Create a new luma image with some padding
-    let mut image = DynamicImage::new_luma8(glyphs_width + 40, (glyphs_height * text.len() as u32)  + 40).to_luma8();
+    let mut image =
+        DynamicImage::new_luma8(glyphs_width + 40, (glyphs_height * text.len() as u32) + 40)
+            .to_luma8();
 
     for (line_index, line) in text.iter().enumerate() {
-
         let glyphs: Vec<_> = font
-            .layout(&line, scale, point(
-                    offset, 
-                    (offset + v_metrics.ascent) + (line_index as u32 * glyphs_height) as f32
-                    )
-                )
+            .layout(
+                &line,
+                scale,
+                point(
+                    offset,
+                    (offset + v_metrics.ascent) + (line_index as u32 * glyphs_height) as f32,
+                ),
+            )
             .collect();
 
         // Loop through the glyphs in the text, positing each one on a line
@@ -59,8 +81,7 @@ pub fn render_image(text: Vec<String>, output: PathBuf) {
                         // Offset the position by the glyph bounding box
                         x + bounding_box.min.x as u32,
                         y + bounding_box.min.y as u32,
-                        Luma([ (255.0 * v) as u8 ])
-                        // Turn the coverage into an alpha value
+                        Luma([(255.0 * v) as u8]), // Turn the coverage into an alpha value
                     )
                 });
             }
@@ -71,10 +92,68 @@ pub fn render_image(text: Vec<String>, output: PathBuf) {
 
     if output_as_str == "-" {
         let _ = image.write_with_encoder(BmpEncoder::new(&mut stdout()));
-    }
-    else {
+    } else {
         let _ = image.save(output_as_str);
     }
-
 }
 
+pub fn render_video(args: &Args) -> Result<(), ffmpeg_next::Error> {
+    ffmpeg_next::init().unwrap();
+
+    let mut ictx = format::input(&args.path).unwrap();
+
+    let input = ictx
+        .streams()
+        .best(Type::Video)
+        .ok_or(ffmpeg_next::Error::StreamNotFound)?;
+    let video_stream_index = input.index();
+
+    let context_decoder =
+        ffmpeg_next::codec::context::Context::from_parameters(input.parameters())?;
+    let mut decoder = context_decoder.decoder().video()?;
+
+    for (stream, packet) in ictx.packets() {
+        if stream.index() == video_stream_index {
+            decoder.send_packet(&packet)?;
+            process_video_packet(&mut decoder, args)?;
+        }
+    }
+    Ok(())
+}
+
+fn process_video_packet(
+    decoder: &mut ffmpeg_next::decoder::Video,
+    args: &Args,
+) -> Result<(), ffmpeg_next::Error> {
+    let mut decoded = Video::empty();
+    let mut scaler = Context::get(
+        decoder.format(),
+        decoder.width(),
+        decoder.height(),
+        Pixel::RGB24,
+        decoder.width(),
+        decoder.height(),
+        Flags::BILINEAR,
+    )?;
+
+    while decoder.receive_frame(&mut decoded).is_ok() {
+        // create dynamic image from frame and process it
+        let mut rgb_frame = Video::empty();
+        scaler.run(&decoded, &mut rgb_frame)?;
+
+        let ppm_header = format!("P6\n{} {}\n255\n", rgb_frame.width(), rgb_frame.height());
+        let ppm_data = rgb_frame.data(0);
+
+        let dyn_image = Reader::new(Cursor::new([ppm_header.as_bytes(), ppm_data].concat()))
+            .with_guessed_format()
+            .unwrap()
+            .decode()
+            .unwrap();
+
+        let res = img2text(dyn_image, args);
+
+        render_image(res, "-".into());
+    }
+
+    Ok(())
+}

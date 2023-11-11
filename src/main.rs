@@ -5,50 +5,38 @@ pub mod render;
 
 use std::io::{self, Cursor, Read};
 
-use constants::{BRAILLE_BASE, CELL_SIZE, CELL_SIZE_X};
-use image::{DynamicImage, ImageBuffer, Rgba};
+use cli::Args;
+use constants::{BRAILLE_BASE, CELL_SIZE, CELL_SIZE_X, VIDEO_FORMATS};
+use image::{DynamicImage, ImageError};
 use itertools::Itertools;
 
 use iter::{BrailleCellIterator, IteratorOpts};
-use render::render_image;
-use rusttype::{point, Font, Scale};
+use render::{render_image, render_video};
 
 fn main() {
     let args = cli::args().run();
-    let input_path_as_str = args.path.to_str().unwrap();
 
-    let mut image = match input_path_as_str {
-        "-" => read_raw_image_from_stdin(),
-        _ => image::open(args.path).unwrap(),
-    };
+    let image_result = image::open(&args.path);
 
-    if args.cols > 10 {
-        image = resize_image(args.cols, &image);
+    if let Err(ImageError::IoError(err)) = image_result {
+        panic!("{:?}", err)
     }
 
-    let it = BrailleCellIterator::new(
-        &image,
-        IteratorOpts {
-            threshold: args.thresh,
-            invert: args.invert,
-        },
-    );
-    let width = it.width;
-
-    let rows: Vec<String> = it
-        .filter_map(lums_to_braille)
-        // div 2 due to one braille char consuming 2px in x direction
-        .chunks(width / 2)
-        .into_iter()
-        .map(|chunk| chunk.collect())
-        .collect();
-
-    if args.print {
-        for row in rows.iter() {
-            println!("{}", row);
+    if let Ok(img) = image_result {
+        let image_as_text = img2text(img, &args);
+        if args.print == true {
+            for row in image_as_text {
+                println!("{}", row);
+            }
+        } else {
+            render_image(image_as_text, args.output);
         }
+    } else {
+        if !VIDEO_FORMATS.contains(&args.path.extension().unwrap().to_str().unwrap()) {
+            panic!("unsupported format")
+        }
+        let _ = render_video(&args);
     }
-    render_image(rows, args.output);
 }
 
 fn read_raw_image_from_stdin() -> DynamicImage {
@@ -98,3 +86,27 @@ fn braille_offset(lums: [u32; CELL_SIZE]) -> u32 {
     }
     res
 }
+
+fn img2text(mut img: DynamicImage, args: &Args) -> Vec<String> {
+    if args.cols > 10 {
+        img = resize_image(args.cols, &img);
+    }
+
+    let it = BrailleCellIterator::new(
+        &img,
+        IteratorOpts {
+            threshold: args.thresh,
+            invert: args.invert,
+        },
+    );
+    let width = it.width;
+
+    it
+        .filter_map(lums_to_braille)
+        // div 2 due to one braille char consuming 2px in x direction
+        .chunks(width / 2)
+        .into_iter()
+        .map(|chunk| chunk.collect())
+        .collect()
+}
+
